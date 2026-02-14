@@ -9,6 +9,7 @@ export default function PollPage() {
   const { id: pollId } = useParams();
   const [poll, setPoll] = useState(null);
   const [voted, setVoted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   async function fetchPoll() {
     const res = await fetch(`/api/poll/${pollId}`);
@@ -27,6 +28,12 @@ export default function PollPage() {
 
     setVoted(true);
     fetchPoll();
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   useEffect(() => {
@@ -54,11 +61,20 @@ export default function PollPage() {
   return (
     <main className="min-h-screen bg-gray-100 text-gray-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-md w-full max-w-lg p-6">
+        
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">{poll.question}</h1>
+          <button
+            onClick={copyLink}
+            className="text-sm border px-3 py-1 rounded hover:bg-gray-50"
+          >
+            {copied ? "Copied!" : "Copy link"}
+          </button>
         </div>
 
-        <div className="space-y-3">
+        {/* Options */}
+        <div className="space-y-4">
           {poll.options.map((opt) => {
             const percent =
               totalVotes === 0
@@ -67,15 +83,23 @@ export default function PollPage() {
 
             return (
               <div key={opt.id}>
-                <button
-                  onClick={() => vote(opt.id)}
-                  disabled={voted}
-                  className={`w-full text-left border rounded-md p-2 mb-1
-                    ${voted ? "bg-gray-100" : "hover:bg-gray-50"}
-                  `}
-                >
-                  {opt.text}
-                </button>
+                <div className="flex items-center justify-between mb-1">
+                  <span>{opt.text}</span>
+
+                  <button
+                    onClick={() => vote(opt.id)}
+                    disabled={voted}
+                    className={`text-sm px-3 py-1 rounded
+                      ${
+                        voted
+                          ? "bg-gray-200 cursor-not-allowed"
+                          : "bg-gray-600 text-white hover:bg-gray-700"
+                      }
+                    `}
+                  >
+                    Vote
+                  </button>
+                </div>
 
                 <div className="h-2 bg-gray-200 rounded">
                   <div
@@ -94,7 +118,7 @@ export default function PollPage() {
 
         {voted && (
           <p className="text-sm text-gray-600 mt-4 text-center">
-            You have voted!!
+            You have already voted
           </p>
         )}
       </div>
