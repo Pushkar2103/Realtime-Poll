@@ -7,17 +7,13 @@ import { getVoterId } from "@/lib/voter";
 
 export default function PollPage() {
   const { id: pollId } = useParams();
-
   const [poll, setPoll] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [voted, setVoted] = useState(false);
 
   async function fetchPoll() {
-    if (!pollId) return;
     const res = await fetch(`/api/poll/${pollId}`);
     const data = await res.json();
     setPoll(data);
-    setLoading(false);
   }
 
   async function vote(optionId) {
@@ -26,75 +22,82 @@ export default function PollPage() {
     const res = await fetch("/api/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pollId,
-        optionId,
-        voterId,
-      }),
+      body: JSON.stringify({ pollId, optionId, voterId }),
     });
 
-    if (res.ok) {
-      setVoted(true);
-      fetchPoll();
-    } else {
-      const data = await res.json();
-      alert(data.error || "Voting failed");
-      setVoted(true);
-    }
+    setVoted(true);
+    fetchPoll();
   }
 
-  // Initial fetch
-  useEffect(() => {
-    fetchPoll();
-  }, [pollId]);
-
-  // Real-time updates
   useEffect(() => {
     if (!pollId) return;
+    fetchPoll();
 
     const pusher = new Pusher(
       process.env.NEXT_PUBLIC_PUSHER_KEY,
-      {
-        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-      }
+      { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER }
     );
 
     const channel = pusher.subscribe(`poll-${pollId}`);
-
-    channel.bind("vote-updated", () => {
-      fetchPoll();
-    });
+    channel.bind("vote-updated", fetchPoll);
 
     return () => {
-      channel.unbind_all();
       channel.unsubscribe();
       pusher.disconnect();
     };
   }, [pollId]);
 
-  if (!pollId || loading) return <p>Loading...</p>;
-  if (poll?.error) return <p>Poll not found</p>;
+  if (!poll) return <p className="p-6">Loading...</p>;
+
+  const totalVotes = poll.options.reduce((s, o) => s + Number(o.votes), 0);
 
   return (
-    <main style={{ padding: "40px" }}>
-      <h1>{poll.question}</h1>
+    <main className="min-h-screen bg-gray-100 text-gray-700 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-md w-full max-w-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold">{poll.question}</h1>
+        </div>
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {poll.options.map((opt) => (
-          <li key={opt.id} style={{ marginBottom: "10px" }}>
-            <button
-              onClick={() => vote(opt.id)}
-              disabled={voted}
-              style={{ marginRight: "10px" }}
-            >
-              Vote
-            </button>
-            {opt.text} — {opt.votes} votes
-          </li>
-        ))}
-      </ul>
+        <div className="space-y-3">
+          {poll.options.map((opt) => {
+            const percent =
+              totalVotes === 0
+                ? 0
+                : Math.round((opt.votes / totalVotes) * 100);
 
-      {voted && <p>✅ You have voted</p>}
+            return (
+              <div key={opt.id}>
+                <button
+                  onClick={() => vote(opt.id)}
+                  disabled={voted}
+                  className={`w-full text-left border rounded-md p-2 mb-1
+                    ${voted ? "bg-gray-100" : "hover:bg-gray-50"}
+                  `}
+                >
+                  {opt.text}
+                </button>
+
+                <div className="h-2 bg-gray-200 rounded">
+                  <div
+                    className="h-2 bg-gray-500 rounded"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+
+                <div className="text-xs text-gray-600 mt-1">
+                  {opt.votes} votes ({percent}%)
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {voted && (
+          <p className="text-sm text-gray-600 mt-4 text-center">
+            You have voted!!
+          </p>
+        )}
+      </div>
     </main>
   );
 }
