@@ -1,10 +1,10 @@
+export const runtime = "nodejs";
 import { query } from "@/lib/db";
 
 export async function GET(req, { params }) {
   try {
     const { id: pollId } = await params;
 
-    // Fetch poll
     const pollResult = await query(
       "SELECT id, question FROM polls WHERE id = $1",
       [pollId]
@@ -14,7 +14,6 @@ export async function GET(req, { params }) {
       return Response.json({ error: "Poll not found" }, { status: 404 });
     }
 
-    // Fetch options with vote counts
     const optionsResult = await query(
       `
       SELECT 

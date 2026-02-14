@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { query } from "@/lib/db";
 
 export async function POST(req) {
@@ -5,7 +6,6 @@ export async function POST(req) {
     const body = await req.json();
     const { question, options } = body;
 
-    // Basic validation
     if (!question || !Array.isArray(options) || options.length < 2) {
       return Response.json(
         { error: "Question and at least 2 options required" },
@@ -13,7 +13,6 @@ export async function POST(req) {
       );
     }
 
-    // Insert poll
     const pollResult = await query(
       "INSERT INTO polls (question) VALUES ($1) RETURNING id",
       [question]
@@ -21,7 +20,6 @@ export async function POST(req) {
 
     const pollId = pollResult.rows[0].id;
 
-    // Insert options
     for (const opt of options) {
       await query(
         "INSERT INTO options (poll_id, text) VALUES ($1, $2)",

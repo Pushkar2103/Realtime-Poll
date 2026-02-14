@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { query } from "@/lib/db";
 import crypto from "crypto";
 import { pusher } from "@/lib/pusher";
@@ -13,13 +14,11 @@ export async function POST(req) {
       );
     }
 
-    // Hash voter ID
     const voterHash = crypto
       .createHash("sha256")
       .update(voterId)
       .digest("hex");
 
-    // Insert vote (DB enforces uniqueness)
     await query(
       `
       INSERT INTO votes (poll_id, option_id, voter_hash)
@@ -37,7 +36,6 @@ export async function POST(req) {
     return Response.json({ success: true });
 
   } catch (err) {
-    // Duplicate vote attempt
     if (err.code === "23505") {
       return Response.json(
         { error: "You have already voted" },
