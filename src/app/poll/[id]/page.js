@@ -62,7 +62,6 @@ export default function PollPage() {
     <main className="min-h-screen bg-gray-100 text-gray-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-md w-full max-w-lg p-6">
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">{poll.question}</h1>
           <button
@@ -73,7 +72,6 @@ export default function PollPage() {
           </button>
         </div>
 
-        {/* Options */}
         <div className="space-y-4">
           {poll.options.map((opt) => {
             const percent =
@@ -118,7 +116,7 @@ export default function PollPage() {
 
         {voted && (
           <p className="text-sm text-gray-600 mt-4 text-center">
-            You have already voted
+            You have voted!!
           </p>
         )}
       </div>
